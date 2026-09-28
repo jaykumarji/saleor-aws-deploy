@@ -1,3 +1,4 @@
+cat docker-compose.yml
 services:
   api:
     image: ghcr.io/saleor/saleor:3.23.2
@@ -5,14 +6,35 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: eu-north-1
+        awslogs-group: /saleor/api
+        awslogs-create-group: "true"
+        awslogs-stream: api
   worker:
     image: ghcr.io/saleor/saleor:3.23.2
     command: celery --app=saleor.celeryconf:app worker --loglevel=info
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: eu-north-1
+        awslogs-group: /saleor/worker
+        awslogs-create-group: "true"
+        awslogs-stream: worker
   dashboard:
     image: ghcr.io/saleor/saleor-dashboard:3.23.2
     ports:
       - "9000:80"
     environment:
       API_URL: https://rahulsaleor.duckdns.org/graphql/
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: eu-north-1
+        awslogs-group: /saleor/dashboard
+        awslogs-create-group: "true"
+        awslogs-stream: dashboard
