@@ -1,26 +1,43 @@
-name: Deploy to EC2
+name: CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Validate compose file
+        run: docker compose config --no-interpolate -q
 
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
           script: |
             cd ~/saleor-deploy
             git pull origin main
             ~/fetch-secrets.sh
             docker compose config -q
             docker compose up -d --remove-orphans
+            docker image prune -f
+
+      - name: Health check
+        run: |
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors \
+            https://rahulsaleor.duckdns.org/ -o /dev/null
