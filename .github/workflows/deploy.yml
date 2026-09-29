@@ -27,6 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INSTANCE_ID: i-04f3836bb868b3ae6
+            - name: Show OIDC claims
+        run: |
+          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' \
+            | awk '{ while (length($0)%4) $0=$0"="; print }' \
+            | base64 -d | jq '{iss, aud, sub, repository, ref}'
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
