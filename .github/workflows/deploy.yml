@@ -27,8 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INSTANCE_ID: i-04f3836bb868b3ae6
-    
-
+    steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::692584137916:role/github-deploy-role
